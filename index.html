@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculateur de temps Mati</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap">
+<style>
+:root{{color-scheme:light;box-sizing:border-box}}
+body{{margin:0;padding:0}}
+img{{max-width:100%}}
+
+/* Layout : lignes de saisie à gauche, panneau noir de résultat collant à droite; empilé sur téléphone avec une barre de total fixe en bas */
+:root{
+  --bg:#FFFFFF; --fg:#0B0B0D; --muted:#5D5A5E; --rule:#E4E0DC; --band:#F2EDED;
+  --panel:#0B0B0D; --panel-fg:#FAF9F8; --panel-muted:#C4C4C4; --panel-rule:#393939;
+  --coral:#F26D78; --coral-text:#B8404C; --on-coral:#0B0B0D; --btn-bg:#FFFFFF;
+  --font:"Figtree", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121214; --fg:#F4F2F0; --muted:#B5B0B3; --rule:#2E2C30; --band:#1C1B1E;
+  --panel:#1F1E22; --panel-fg:#FAF9F8; --panel-muted:#C4C4C4; --panel-rule:#3A383C;
+  --coral:#F26D78; --coral-text:#F58D96; --on-coral:#0B0B0D; --btn-bg:#121214; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121214; --fg:#F4F2F0; --muted:#B5B0B3; --rule:#2E2C30; --band:#1C1B1E;
+  --panel:#1F1E22; --panel-fg:#FAF9F8; --panel-muted:#C4C4C4; --panel-rule:#3A383C;
+  --coral:#F26D78; --coral-text:#F58D96; --on-coral:#0B0B0D; --btn-bg:#121214; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:32px}
+.logo{height:46px;width:auto;display:block}
+.logo .mark{fill:var(--coral)}
+.logo .word{fill:var(--fg)}
+.intro{display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:clamp(30px,4.5vw,46px);line-height:1.12;font-weight:700;text-wrap:balance;max-width:20ch}
+h1 strong{color:var(--coral-text)}
+.lead{margin:0;font-size:19px;color:var(--muted);max-width:60ch}
+.how{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px 24px;font-size:15px;color:var(--muted)}
+.how li{display:flex;gap:8px;align-items:baseline}
+.how b{color:var(--fg)}
+
+.grid{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.col{flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.rows{border-top:1px solid var(--rule)}
+.row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding:18px 0;border-bottom:1px solid var(--rule)}
+.row .txt{flex:1 1 240px;min-width:0}
+.row .label{font-weight:600;font-size:18px;display:block}
+.row .hint{font-size:15px;color:var(--muted)}
+.row.rate{border-bottom:0;background:var(--band);padding:18px 16px;margin-top:16px}
+.step{display:flex;align-items:center;gap:8px}
+.step button{width:44px;height:44px;font:inherit;font-size:22px;line-height:1;cursor:pointer;border:1px solid var(--fg);background:var(--btn-bg);color:var(--fg);border-radius:0}
+.step button.plus{background:var(--fg);color:var(--bg)}
+.field{display:flex;align-items:baseline;justify-content:center;gap:4px;width:112px;height:44px;border-bottom:2px solid var(--fg);padding-top:6px}
+.field input{width:58px;border:0;background:transparent;color:var(--fg);font:inherit;font-size:21px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;padding:0;-moz-appearance:textfield;appearance:textfield}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.field span{font-size:15px;color:var(--muted);white-space:nowrap}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.reset{align-self:flex-start;font:inherit;font-size:15px;color:var(--muted);background:none;border:0;padding:8px 0;text-decoration:underline;cursor:pointer}
+
+aside{flex:1 1 360px;min-width:0;background:var(--panel);color:var(--panel-fg);padding:32px;display:flex;flex-direction:column;gap:22px;position:sticky;top:calc(16px + env(safe-area-inset-top, 0px))}
+.k{font-size:14px;color:var(--panel-muted)}
+.big{font-size:52px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.money{font-size:42px;font-weight:700;line-height:1.05;color:var(--coral);font-variant-numeric:tabular-nums}
+.sub{font-size:16px;color:var(--panel-muted)}
+.sep{border-top:1px solid var(--panel-rule);padding-top:20px;display:flex;flex-direction:column;gap:6px}
+.top{font-size:22px;font-weight:700;line-height:1.2}
+.note{margin:0;font-size:14px;color:var(--panel-muted)}
+.mail{font-weight:700;color:var(--panel-fg);user-select:all;-webkit-user-select:all}
+.cta{display:block;font:inherit;font-weight:700;font-size:17px;background:var(--coral);color:var(--on-coral);border:0;border-radius:0;padding:16px 20px;cursor:pointer;text-align:center;text-decoration:none}
+.ghost{font:inherit;font-size:15px;font-weight:600;background:none;color:var(--panel-fg);border:1px solid var(--panel-rule);padding:10px 14px;cursor:pointer;align-self:flex-start}
+.bring{margin:0;font-size:16px}
+#after{display:flex;flex-direction:column;gap:10px}
+#fallback{width:100%;min-height:150px;font:inherit;font-size:14px;background:var(--panel);color:var(--panel-fg);border:1px solid var(--panel-rule);padding:10px}
+
+.bar{display:none}
+@media (max-width: 940px){
+  aside{position:static}
+  .wrap{padding-block:28px 110px}
+  .bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--panel);color:var(--panel-fg);justify-content:space-between;align-items:baseline;gap:12px;padding-top:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));font-variant-numeric:tabular-nums;border-top:1px solid var(--panel-rule)}
+  .bar .h{font-weight:700;font-size:18px}
+  .bar .m{font-weight:700;font-size:18px;color:var(--coral)}
+  .bar small{font-size:13px;font-weight:400;color:var(--panel-muted)}
+}
+
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <svg class="logo" viewBox="0 0 362.2 171.7" role="img" aria-label="Mati"><path class="mark" d="M302.1,68.2c3.2-2.3,4.8-6.1,4.8-11.4v-17c0-5.1,3.1-8.3,8-8.3h2.6v-2.8c0-2-1.6-3.6-3.6-3.6h-7.4c-7.7,0-13.2,6-13.2,14.2l0,18.4c0,5.4-2,9.2-6,11.1c-0.7,0.3-1.4,0.6-2.2,0.8c-1.5,0.4-2.4,1.9-2.4,3.4v0c0,1.5,1,2.9,2.4,3.4c0.7,0.2,1.5,0.5,2.2,0.9c4,1.9,6,5.6,6,11V107c0,8.2,5.6,14.2,13.2,14.2h7.4c2,0,3.6-1.6,3.6-3.6v-3.2h-2.6c-5,0-8-3.2-8-8.3v-17c0-5.3-1.6-9.1-4.8-11.4c-1.9-1.4-3.9-2.3-6.1-3l-5.5-1.6l5.4-1.8C298.1,70.6,300.2,69.5,302.1,68.2z"/><path class="mark" d="M289.3,1.5c-39.5,0-71.6,32.1-71.6,71.6c0,0.6,0,1.2,0,1.9h2.8c2.1,0,3.8,1.7,3.8,3.8v15h9.3c-2.4-6.4-3.7-13.4-3.7-20.7c0-32.7,26.6-59.3,59.3-59.3s59.3,26.6,59.3,59.3c0,32.7-26.6,59.3-59.3,59.3c-5.3,0-10.5-0.7-15.5-2.1V143c5,1.1,10.1,1.7,15.5,1.7c39.5,0,71.6-32.1,71.6-71.6C360.9,33.6,328.8,1.5,289.3,1.5z"/><path class="mark" d="M241.1,107.7v2.5c0,2.1-1.7,3.8-3.8,3.8h-6.8c5.5,7.9,12.7,14.7,20.9,19.8v-15.1C247.6,115.5,244.1,111.8,241.1,107.7z"/><path class="word" d="M90.2,92.4c-12.8,0-21.4,4.2-25.6,12.5C61,96.6,54,92.4,43.6,92.4c-9.3,0-17.1,4.7-20,11.5v-6.2c0-2-1.6-3.6-3.6-3.6H4.5c-2,0-3.6,1.6-3.6,3.6v68.7c0,2,1.6,3.5,3.5,3.5h15.7c2,0,3.5-1.6,3.5-3.5v-37.8c0-9.2,5.3-15.6,12.7-15.6s11.5,5.6,11.5,14.8v38.6c0,2,1.6,3.5,3.5,3.5H67c2,0,3.5-1.6,3.5-3.5v-37.8c0-9.2,5.3-15.6,12.8-15.6c7.3,0,11.5,5.6,11.5,14.8v38.6c0,2,1.6,3.5,3.5,3.5H114c2,0,3.5-1.6,3.5-3.5V125C117.5,104.6,107.8,92.4,90.2,92.4z"/><path class="word" d="M168.9,97.6c-2.6-5.2-9.8-5.2-12.4,0l-34,68.1c-0.9,1.9,0.3,4.2,2.3,4.2h16.9c1.8,0,3.4-1.1,4.2-2.8l14.6-30c0.9-1.8,3.4-1.8,4.2,0l14.8,30.1c0.8,1.7,2.4,2.7,4.2,2.7h16.8c2,0,3.3-2.3,2.3-4.2L168.9,97.6z"/><path class="word" d="M237.3,93.8h-13v-15c0-2.1-1.7-3.8-3.8-3.8h-14.2c-2.1,0-3.8,1.7-3.8,3.8v15v20.3v29.1c0,18,8.7,27,26.1,27h3.3h5.4c2.1,0,3.8-1.7,3.8-3.8v-12.7c0-2.1-1.7-3.8-3.8-3.8h-1.7h-1.7c-6.8,0-9.6-2.9-9.6-10.1v-25.8h13c2.1,0,3.8-1.7,3.8-3.8V97.6C241.1,95.5,239.4,93.8,237.3,93.8z"/><path class="word" d="M274.8,70.3l-22-11c-0.6-0.3-1.4,0.1-1.4,0.7v5.5c0,0.6,0,13,0,13.6v5.4c0,0.6,0.7,1.1,1.4,0.7l22-11C276.5,73.4,276.5,71.1,274.8,70.3z"/><path class="word" d="M269.9,93.8h-14.5c-2.2,0-3.9,1.8-3.9,3.9v68.5c0,2.2,1.8,3.9,3.9,3.9h14.5c2.2,0,3.9-1.8,3.9-3.9V97.8C273.8,95.6,272,93.8,269.9,93.8z"/></svg>
+
+  <div class="intro">
+    <h1>Combien d'heures ton admin te prend-elle <strong>chaque semaine?</strong></h1>
+    <p class="lead">Deux minutes avant notre rencontre. Tes chiffres, ton calcul.</p>
+    <ul class="how">
+      <li><b>1.</b> Ajuste chaque ligne selon ta réalité.</li>
+      <li><b>2.</b> Compte les heures de toute ton équipe.</li>
+      <li><b>3.</b> Les valeurs de départ sont des exemples.</li>
+    </ul>
+  </div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="rows" id="rows"></div>
+      <button type="button" class="reset" id="reset">Tout remettre à zéro</button>
+    </div>
+
+    <aside aria-live="polite">
+      <div>
+        <div class="k">Ton temps d'admin aujourd'hui</div>
+        <div class="big"><span id="yearH">0</span> h</div>
+        <div class="sub">par année, soit <span id="weekH">0</span> h par semaine</div>
+      </div>
+      <div class="sep">
+        <div class="k">Ce que ça représente</div>
+        <div class="money" id="yearC">0 $</div>
+        <div class="sub">par année, soit <span id="ftWeeks">0</span> de travail à temps plein</div>
+      </div>
+      <div class="sep">
+        <div class="k">Ta tâche la plus lourde</div>
+        <div class="top" id="topName">À venir</div>
+        <div class="sub" id="topSub">Ajoute tes heures pour la voir.</div>
+      </div>
+      <a class="cta" id="send" href="#">Envoyer mes chiffres à Alexandre</a>
+      <p class="bring">Le bouton prépare le courriel dans ton logiciel. Tu n'as qu'à l'envoyer, puis on part de tes chiffres à notre rencontre.</p>
+      <div id="after" hidden>
+        <p class="note">Ton courriel ne s'est pas ouvert? Copie ton calcul ci-dessous et envoie-le à <span class="mail">alexandre@mati.tech</span></p>
+        <textarea id="fallback" readonly aria-label="Ton calcul à copier"></textarea>
+        <button type="button" class="ghost" id="copy">Copier mon calcul</button>
+      </div>
+      <p class="note">Ce calcul montre ton temps actuel selon tes chiffres. Ce n'est pas une promesse de résultat. Base : 48 semaines travaillées, 40 h par semaine à temps plein.</p>
+    </aside>
+  </div>
+</div>
+
+<div class="bar" aria-hidden="true">
+  <span class="h"><span id="barH">0</span> h <small>par semaine</small></span>
+  <span class="m"><span id="barC">0 $</span> <small>par année</small></span>
+</div>
+
+
+<script>
+
+(function(){
+  var KEY="mati-calc-v1", WEEKS=48, FULL=40, EMAIL="alexandre@mati.tech";
+  var tasks=[
+    {id:"saisie",label:"Double saisie",hint:"Entrer la même info dans plusieurs logiciels",v:3},
+    {id:"soum",label:"Soumissions",hint:"Monter, envoyer et relancer les soumissions",v:3},
+    {id:"paie",label:"Feuilles de temps et paie",hint:"Compiler les heures des gars",v:4},
+    {id:"fact",label:"Facturation",hint:"Créer les factures et suivre les paiements",v:2},
+    {id:"suivi",label:"Suivis et relances",hint:"Clients, fournisseurs, sous-traitants",v:2},
+    {id:"docs",label:"Courriels et documents",hint:"Trier, classer, retrouver l'information",v:2},
+    {id:"autre",label:"Autre tâche répétitive",hint:"Celle qui revient chaque semaine et qui n'est pas dans la liste",v:0}
+  ];
+  var rate={id:"taux",v:45};
+
+  try{
+    var saved=JSON.parse(localStorage.getItem(KEY)||"null");
+    if(saved){
+      tasks.forEach(function(t){ if(typeof saved[t.id]==="number") t.v=saved[t.id]; });
+      if(typeof saved.taux==="number") rate.v=saved.taux;
+    }
+  }catch(e){}
+  function save(){
+    try{
+      var o={taux:rate.v}; tasks.forEach(function(t){o[t.id]=t.v;});
+      localStorage.setItem(KEY,JSON.stringify(o));
+    }catch(e){}
+  }
+
+  var $=function(id){return document.getElementById(id);};
+  var num=function(n,d){return n.toLocaleString("fr-CA",{maximumFractionDigits:d||0});};
+  var money=function(n){return num(Math.round(n))+" $";};
+  var clamp=function(n,a,b){return Math.max(a,Math.min(b,n));};
+  var rows=$("rows"), inputs={};
+
+  function addRow(item,label,hint,unit,min,max,step,cls){
+    var row=document.createElement("div"); row.className="row"+(cls?" "+cls:"");
+    row.innerHTML='<div class="txt"><label class="label" for="'+item.id+'"></label><div class="hint"></div></div>'+
+      '<div class="step"><button type="button" class="minus" id="'+item.id+'-m">−</button>'+
+      '<div class="field"><input id="'+item.id+'" type="number" inputmode="decimal" min="'+min+'" max="'+max+'" step="any"><span></span></div>'+
+      '<button type="button" class="plus" id="'+item.id+'-p">+</button></div>';
+    row.querySelector(".label").textContent=label;
+    row.querySelector(".hint").textContent=hint;
+    row.querySelector(".field span").textContent=unit;
+    var inp=row.querySelector("input"), m=row.querySelector(".minus"), p=row.querySelector(".plus");
+    m.setAttribute("aria-label","Diminuer : "+label); p.setAttribute("aria-label","Augmenter : "+label);
+    inp.value=item.v; inputs[item.id]=inp;
+    function set(v){item.v=clamp(v,min,max); inp.value=item.v; calc(); save();}
+    m.addEventListener("click",function(){set(Math.ceil(item.v/step-1)*step);});
+    p.addEventListener("click",function(){set(Math.floor(item.v/step+1)*step);});
+    inp.addEventListener("input",function(){
+      var v=parseFloat(String(inp.value).replace(",","."));
+      item.v=isFinite(v)?clamp(v,min,max):0; calc(); save();
+    });
+    inp.addEventListener("blur",function(){inp.value=item.v;});
+    rows.appendChild(row);
+  }
+
+  tasks.forEach(function(t){ addRow(t,t.label,t.hint,"h/sem.",0,80,1); });
+  addRow(rate,"Taux horaire moyen","Salaire et charges de la personne qui fait ces tâches","$/h",0,300,5,"rate");
+
+  function totals(){
+    var week=tasks.reduce(function(a,t){return a+t.v;},0);
+    var top=tasks.slice().sort(function(a,b){return b.v-a.v;})[0];
+    return {week:week, year:week*WEEKS, cost:week*WEEKS*rate.v, top:top};
+  }
+
+  function summary(){
+    var t=totals(), lines=["Mes chiffres d'admin (calculateur Mati)",""];
+    tasks.forEach(function(x){ if(x.v>0) lines.push("- "+x.label+" : "+num(x.v,1)+" h par semaine"); });
+    lines.push("", "Total : "+num(t.week,1)+" h par semaine, "+num(t.year)+" h par année");
+    lines.push("Taux horaire moyen : "+num(rate.v,2)+" $/h");
+    lines.push("Ce que ça représente : "+money(t.cost)+" par année");
+    if(t.top.v>0) lines.push("Ma tâche la plus lourde : "+t.top.label);
+    return lines.join("\n");
+  }
+
+  var send=$("send");
+  function calc(){
+    var t=totals(), fw=t.year/FULL;
+    $("weekH").textContent=num(t.week,1);
+    $("yearH").textContent=num(t.year);
+    $("yearC").textContent=money(t.cost);
+    $("ftWeeks").textContent=num(fw,1)+(fw>=2?" semaines":" semaine");
+    $("barH").textContent=num(t.week,1);
+    $("barC").textContent=money(t.cost);
+    if(t.top.v>0){
+      $("topName").textContent=t.top.label;
+      $("topSub").textContent=num(t.top.v*WEEKS)+" h et "+money(t.top.v*WEEKS*rate.v)+" par année";
+    }else{
+      $("topName").textContent="À venir";
+      $("topSub").textContent="Ajoute tes heures pour la voir.";
+    }
+    send.href="mailto:"+EMAIL+"?subject="+encodeURIComponent("Mes chiffres d'admin avant notre rencontre")+"&body="+encodeURIComponent(summary());
+  }
+
+  send.addEventListener("click",function(){
+    var fb=$("fallback");
+    fb.value=summary();
+    $("after").hidden=false;
+  });
+
+  var copyBtn=$("copy"), timer;
+  copyBtn.addEventListener("click",function(){
+    var fb=$("fallback"), text=fb.value||summary();
+    function showSelect(){
+      fb.focus(); fb.select();
+      copyBtn.textContent="Sélectionne le texte et copie-le";
+    }
+    function done(){
+      copyBtn.textContent="Calcul copié";
+      clearTimeout(timer); timer=setTimeout(function(){copyBtn.textContent="Copier mon calcul";},2500);
+    }
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done,showSelect);
+      }else{ showSelect(); }
+    }catch(e){ showSelect(); }
+  });
+
+  $("reset").addEventListener("click",function(){
+    tasks.forEach(function(t){t.v=0; inputs[t.id].value=0;});
+    calc(); save();
+  });
+
+  calc();
+})();
+
+</script>
+</body>
+</html>
